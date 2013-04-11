@@ -157,7 +157,8 @@ def wsgi_app(environ, start_response):
         status, headers, body = render_html(INDEX_HTML % dict(
             color_options=''.join(
                 '<option>%s</option>' % color
-                for color in list_color_options()),
+                for color in list_color_options()
+                if color != 'gray'),
         ))
     elif path == '/image.png':
         status, headers, body = render_image(form, "png")
