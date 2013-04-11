@@ -52,9 +52,13 @@ def wsgi_app(environ, start_response):
     vendor = form.getfirst("vendor", "badgeserver")
     status = form.getfirst("status", "okay")
     color = form.getfirst("color", "lightgray")
+    format = form.getfirst("format", "png")
     # Generate the image
-    content_type = "image/png"
-    image_data = make_badge_png(vendor=vendor, status=status, color=color)
+    factory, content_type = dict(
+        png=(make_badge_png, "image/png"),
+        svg=(make_badge_svg, "image/svg+xml"),
+    )[format]
+    image_data = factory(vendor=vendor, status=status, color=color)
     # Return a response
     status = '200 OK'
     headers = [('Content-type', content_type)]
@@ -66,7 +70,10 @@ def serve(port=8000, listen_on='localhost'):
     from wsgiref.simple_server import make_server
     server = make_server(listen_on, port, wsgi_app)
     print("Listening on http://%s:%d/" % (listen_on or '*', port))
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
 
 
 def main():
