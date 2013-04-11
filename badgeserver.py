@@ -109,12 +109,13 @@ INDEX_HTML = '''\
         var vendor = document.getElementById("vendor").value;
         var status = document.getElementById("status").value;
         var color = document.getElementById("color").value;
+        var format = document.getElementById("format").value;
         var img = document.getElementById("result");
-        img.src = "/image.png?vendor=" + vendor + "&status=" + status + "&color=" + color;
+        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color;
       }
     </script>
   </head>
-  <body onload="update">
+  <body onload="update()">
     <form>
       <p>
         <label for="vendor">Vendor</label>
@@ -128,6 +129,13 @@ INDEX_HTML = '''\
         <label for="status">Color</label>
         <select id="color" name="color" onchange="update()">
           %(color_options)s
+        </select>
+      </p>
+      <p>
+        <label for="status">Format</label>
+        <select id="format" name="format" onchange="update()">
+          <option value="png">PNG</option>
+          <option value="svg">SVG</option>
         </select>
       </p>
       <p>
