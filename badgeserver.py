@@ -110,9 +110,9 @@ def render_error(code, message):
 
 
 def render_image(form, format):
-    vendor = form.getfirst("vendor", "badgeserver")
+    vendor = form.getfirst("vendor", "badgeserver").decode('UTF-8')
     vendor_width = int(form.getfirst("vendor_width", "-1"))
-    status = form.getfirst("status", "okay")
+    status = form.getfirst("status", "okay").decode('UTF-8')
     status_width = int(form.getfirst("status_width", "-1"))
     color = form.getfirst("color", "lightgray")
     factory, content_type = dict(
