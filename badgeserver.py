@@ -9,7 +9,9 @@ Be sure to install the Open Sans font where cairo will find it
 """
 
 import os
+import cgi
 from functools import partial
+from cStringIO import StringIO
 
 from lxml import etree
 from cairosvg import svg2png
@@ -45,10 +47,19 @@ def make_badge_png(**kw):
 
 
 def wsgi_app(environ, start_response):
+    # Parse query string
+    form = cgi.FieldStorage(environ=environ, fp=StringIO())
+    vendor = form.getfirst("vendor", "badgeserver")
+    status = form.getfirst("status", "okay")
+    color = form.getfirst("color", "lightgray")
+    # Generate the image
+    content_type = "image/png"
+    image_data = make_badge_png(vendor=vendor, status=status, color=color)
+    # Return a response
     status = '200 OK'
-    headers = [('Content-type', 'image/png')]
+    headers = [('Content-type', content_type)]
     start_response(status, headers)
-    return [make_badge_png(vendor='badgeserver', status='okay', color='green')]
+    return [image_data]
 
 
 def serve(port=8000, listen_on='localhost'):
