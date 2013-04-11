@@ -14,6 +14,7 @@ import cgi
 from functools import partial
 from cStringIO import StringIO
 
+import cairo
 from lxml import etree
 from cairosvg import svg2png
 
@@ -34,6 +35,26 @@ def list_color_options():
     return [node.attrib['id'] for node in xpath('//svg:linearGradient')]
 
 
+def text_width(text, font_family="Open Sans", font_size=10,
+               font_style=cairo.FONT_SLANT_NORMAL,
+               font_weight=cairo.FONT_WEIGHT_NORMAL):
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
+    context = cairo.Context(surface)
+    context.select_font_face(font_family, font_style, font_weight)
+    context.set_font_size(font_size)
+    return context.text_extents(text)[2]
+
+
+def svg_text_node_width(node):
+    # XXX: requires that the node have font-family and font-size attributes
+    # (I believe SVG defaults to sans-serif 12pt)
+    # XXX: ignores font-style and font-weight attributes
+    # (see cairosvg/surface/text.py about handling those)
+    font_family = node.attrib['font-family']
+    font_size = int(node.attrib['font-size'])
+    return text_width(node.text, font_family, font_size)
+
+
 def make_badge_svg(vendor="vendor", status="status", color="lightgray",
                    vendor_width=40, status_width=37):
     tree = etree.fromstring(load_svg_template())
@@ -47,9 +68,13 @@ def make_badge_svg(vendor="vendor", status="status", color="lightgray",
     # change the vendor text
     for node in xpath('//svg:g[@id="vendor"]/svg:text'):
         node.text = vendor
+        if vendor_width < 0:
+            vendor_width = svg_text_node_width(node) + 7
     # change the status text
     for node in xpath('//svg:g[@id="status"]/svg:text'):
         node.text = status
+        if status_width < 0:
+            status_width = svg_text_node_width(node) + 7
     # change the vendor and status widths
     for node in xpath('//svg:g[@id="vendor"]/svg:rect'):
         node.attrib['width'] = str(vendor_width)
@@ -144,12 +169,12 @@ INDEX_HTML = '''\
       <p>
         <label for="vendor">Vendor</label>
         <input id="vendor" type="text" name="vendor" value="vendor" onchange="update()">
-        <input id="vendor_width" type="number" name="vendor_width" value="40" onchange="update()">px
+        <input id="vendor_width" type="number" name="vendor_width" value="-1" onchange="update()">px (-1 = auto)
       </p>
       <p>
         <label for="status">Status</label>
         <input id="status" type="text" name="status" value="status" onchange="update()">
-        <input id="status_width" type="number" name="status_width" value="37" onchange="update()">px
+        <input id="status_width" type="number" name="status_width" value="-1" onchange="update()">px (-1 = auto)
       </p>
       </p>
       <p>
