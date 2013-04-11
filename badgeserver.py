@@ -9,6 +9,7 @@ Be sure to install the Open Sans font where cairo will find it
 """
 
 import os
+from functools import partial
 
 from lxml import etree
 from cairosvg import svg2png
@@ -18,16 +19,24 @@ HERE = os.path.dirname(__file__)
 SVG_TEMPLATE_FILE = os.path.join(HERE, "shield.svg")
 
 
-def make_badge_svg(color="lightgray"):
+def make_badge_svg(vendor="vendor", status="status", color="lightgray"):
     with open(SVG_TEMPLATE_FILE) as f:
         svg = f.read()
     tree = etree.fromstring(svg)
     nsmap = dict(svg='http://www.w3.org/2000/svg')
-    for node in tree.xpath('//svg:g[@id="status"]/svg:rect | '
-                           '//svg:g[@id="status"]/svg:path', namespaces=nsmap):
+    xpath = partial(tree.xpath, namespaces=nsmap)
+    # change status background gradient
+    if not xpath('//svg:linearGradient[@id="%s"]' % color):
+        print("There's no gradient for %s" % color)
+    for node in xpath('//svg:g[@id="status"]/*[@fill="url(#lightgray)"]'):
         node.attrib['fill'] = "url(#%s)" % color
-    svg = etree.tostring(tree)
-    return svg
+    # change the vendor text
+    for node in xpath('//svg:g[@id="vendor"]/svg:text'):
+        node.text = vendor
+    # change the status text
+    for node in xpath('//svg:g[@id="status"]/svg:text'):
+        node.text = status
+    return etree.tostring(tree)
 
 
 def make_badge_png(**kw):
@@ -39,7 +48,7 @@ def wsgi_app(environ, start_response):
     status = '200 OK'
     headers = [('Content-type', 'image/png')]
     start_response(status, headers)
-    return [make_badge_png(color='green')]
+    return [make_badge_png(vendor='badgeserver', status='okay', color='green')]
 
 
 def serve(port=8000, listen_on='localhost'):
