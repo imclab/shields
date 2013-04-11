@@ -9,6 +9,7 @@ Be sure to install the Open Sans font where cairo will find it
 """
 
 import os
+import re
 import cgi
 from functools import partial
 from cStringIO import StringIO
@@ -33,7 +34,8 @@ def list_color_options():
     return [node.attrib['id'] for node in xpath('//svg:linearGradient')]
 
 
-def make_badge_svg(vendor="vendor", status="status", color="lightgray"):
+def make_badge_svg(vendor="vendor", status="status", color="lightgray",
+                   vendor_width=40, status_width=37):
     tree = etree.fromstring(load_svg_template())
     nsmap = dict(svg='http://www.w3.org/2000/svg')
     xpath = partial(tree.xpath, namespaces=nsmap)
@@ -48,6 +50,20 @@ def make_badge_svg(vendor="vendor", status="status", color="lightgray"):
     # change the status text
     for node in xpath('//svg:g[@id="status"]/svg:text'):
         node.text = status
+    # change the vendor and status widths
+    for node in xpath('//svg:g[@id="vendor"]/svg:rect'):
+        node.attrib['width'] = str(vendor_width)
+    for node in xpath('//svg:g[@id="status"]/svg:rect'):
+        node.attrib['x'] = str(vendor_width + 3)
+        node.attrib['width'] = str(status_width)
+    for node in xpath('//svg:g[@id="status"]/svg:text'):
+        node.attrib['x'] = str(vendor_width + 7)
+    for node in xpath('//svg:g[@id="status"]/svg:path'):
+        node.attrib['d'] = re.sub(r'^M\d+',
+                                  'M%d' % (vendor_width + status_width + 6),
+                                  node.attrib['d'])
+    for node in xpath('/svg:svg'):
+        node.attrib['width'] = str(vendor_width + status_width + 6)
     return etree.tostring(tree)
 
 
@@ -70,13 +86,16 @@ def render_error(code, message):
 
 def render_image(form, format):
     vendor = form.getfirst("vendor", "badgeserver")
+    vendor_width = int(form.getfirst("vendor_width", "40"))
     status = form.getfirst("status", "okay")
+    status_width = int(form.getfirst("status_width", "37"))
     color = form.getfirst("color", "lightgray")
     factory, content_type = dict(
         png=(make_badge_png, "image/png"),
         svg=(make_badge_svg, "image/svg+xml"),
     )[format]
-    image_data = factory(vendor=vendor, status=status, color=color)
+    image_data = factory(vendor=vendor, status=status, color=color,
+                         vendor_width=vendor_width, status_width=status_width)
     status = '200 OK'
     headers = [('Content-type', content_type)]
     return status, headers, image_data
@@ -103,15 +122,20 @@ INDEX_HTML = '''\
       form {
         margin-bottom: 2em;
       }
+      input[type="number"] {
+        width: 4em;
+      }
     </style>
     <script type="text/javascript">
       function update() {
         var vendor = document.getElementById("vendor").value;
+        var vendor_width = document.getElementById("vendor_width").value;
         var status = document.getElementById("status").value;
+        var status_width = document.getElementById("status_width").value;
         var color = document.getElementById("color").value;
         var format = document.getElementById("format").value;
         var img = document.getElementById("result");
-        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color;
+        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color + "&vendor_width=" + vendor_width + "&status_width=" + status_width;
       }
     </script>
   </head>
@@ -120,10 +144,13 @@ INDEX_HTML = '''\
       <p>
         <label for="vendor">Vendor</label>
         <input id="vendor" type="text" name="vendor" value="vendor" onchange="update()">
+        <input id="vendor_width" type="number" name="vendor_width" value="40" onchange="update()">px
       </p>
       <p>
         <label for="status">Status</label>
         <input id="status" type="text" name="status" value="status" onchange="update()">
+        <input id="status_width" type="number" name="status_width" value="37" onchange="update()">px
+      </p>
       </p>
       <p>
         <label for="status">Color</label>
