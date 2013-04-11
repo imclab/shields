@@ -168,12 +168,12 @@ INDEX_HTML = '''\
     <form>
       <p>
         <label for="vendor">Vendor</label>
-        <input id="vendor" type="text" name="vendor" value="vendor" onchange="update()">
+        <input id="vendor" type="text" name="vendor" value="vendor" onchange="update()" onkeyup="update()">
         <input id="vendor_width" type="number" name="vendor_width" value="-1" onchange="update()">px (-1 = auto)
       </p>
       <p>
         <label for="status">Status</label>
-        <input id="status" type="text" name="status" value="status" onchange="update()">
+        <input id="status" type="text" name="status" value="status" onchange="update()" onkeyup="update()">
         <input id="status_width" type="number" name="status_width" value="-1" onchange="update()">px (-1 = auto)
       </p>
       </p>
