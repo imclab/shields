@@ -4,6 +4,9 @@ Script to dynamically generate a status shield.
 
 Needs python-lxml and python-cairosvg (sudo apt-get install it).
 
+ImageMagick and Inkscape renderers need imagemagick and inkscape (duh).
+Librsvg renderer needs librsvg2-bin.
+
 Be sure to install the Open Sans font where cairo will find it
 (i.e. cp font/Open_Sans/*.ttf ~/.local/share/fonts/).
 """
@@ -47,12 +50,17 @@ def svg2png_command(svg_data, command):
         with open('badge.png', 'rb') as f:
             return f.read()
 
+
 def svg2png_inkscape(svg_data):
     return svg2png_command(svg_data, ['inkscape', '-f', 'badge.svg', '-e', 'badge.png'])
 
 
 def svg2png_imagemagick(svg_data):
     return svg2png_command(svg_data, ['convert', 'badge.svg', 'badge.png'])
+
+
+def svg2png_rsvg(svg_data):
+    return svg2png_command(svg_data, ['rsvg-convert', 'badge.svg', '-o', 'badge.png'])
 
 
 def load_svg_template():
@@ -131,6 +139,7 @@ def make_badge_png(**kw):
         'cairosvg': svg2png_cairosvg,
         'inkscape': svg2png_inkscape,
         'imagemagick': svg2png_imagemagick,
+        'rsvg': svg2png_rsvg,
     }[converter]
     return svg2png(svg)
 
@@ -236,6 +245,7 @@ INDEX_HTML = '''\
         <select id="converter" name="converter" onchange="update()">
           <option value="cairosvg">CairoSVG</option>
           <option value="inkscape">Inkscape</option>
+          <option value="rsvg">librsvg</option>
           <option value="imagemagick">ImageMagick</option>
         </select>
       </p>
