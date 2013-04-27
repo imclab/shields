@@ -198,8 +198,11 @@ INDEX_HTML = '''\
       p {
         margin: 1ex;
       }
-      form {
+      form, p.result-image {
         margin-bottom: 2em;
+      }
+      p.result-image {
+        line-height: 0;
       }
       input[type="number"] {
         width: 4em;
@@ -217,6 +220,8 @@ INDEX_HTML = '''\
         var converter = document.getElementById("converter").value;
         var img = document.getElementById("result");
         img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color + "&vendor_width=" + vendor_width + "&status_width=" + status_width + "&converter=" + converter;
+        var tt = document.getElementById("url");
+        tt.innerHTML = img.src;
       }
     </script>
   </head>
@@ -260,7 +265,14 @@ INDEX_HTML = '''\
         <input type="submit" value="Update" onclick="update(); return false">
       </p>
     </form>
-    <p><img id="result" src="/image.png?vendor=vendor&amp;status=status&amp;color=lightgray"></p>
+    <p class="result-image">
+      <img id="result" src="/image.png?vendor=vendor&amp;status=status&amp;color=lightgray">
+    </p>
+    <p>
+      Dynamic image URL:
+      <br>
+      <tt id="url">http://localhost:8000/image.png?vendor=vendor&amp;status=status&amp;color=lightgray</tt>
+    </p>
   </body>
 </html>
 '''
