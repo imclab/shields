@@ -88,7 +88,7 @@ def svg_text_node_width(node):
 
 
 def make_badge_svg(vendor="vendor", status="status", color="lightgray",
-                   vendor_width=40, status_width=37):
+                   vendor_width=40, status_width=37, converter=None):
     tree = etree.fromstring(load_svg_template())
     nsmap = dict(svg='http://www.w3.org/2000/svg')
     xpath = partial(tree.xpath, namespaces=nsmap)
