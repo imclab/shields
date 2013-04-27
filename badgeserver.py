@@ -39,13 +39,20 @@ def TemporaryDirectory():
         shutil.rmtree(tmpdir)
 
 
-def svg2png_inkscape(svg_data):
+def svg2png_command(svg_data, command):
     with TemporaryDirectory():
         with open('badge.svg', 'wb') as f:
             f.write(svg_data)
-        subprocess.check_call(['inkscape', '-f', 'badge.svg', '-e', 'badge.png'])
+        subprocess.check_call(command)
         with open('badge.png', 'rb') as f:
             return f.read()
+
+def svg2png_inkscape(svg_data):
+    return svg2png_command(svg_data, ['inkscape', '-f', 'badge.svg', '-e', 'badge.png'])
+
+
+def svg2png_imagemagick(svg_data):
+    return svg2png_command(svg_data, ['convert', 'badge.svg', 'badge.png'])
 
 
 def load_svg_template():
@@ -123,6 +130,7 @@ def make_badge_png(**kw):
     svg2png = {
         'cairosvg': svg2png_cairosvg,
         'inkscape': svg2png_inkscape,
+        'imagemagick': svg2png_imagemagick,
     }[converter]
     return svg2png(svg)
 
@@ -228,6 +236,7 @@ INDEX_HTML = '''\
         <select id="converter" name="converter" onchange="update()">
           <option value="cairosvg">CairoSVG</option>
           <option value="inkscape">Inkscape</option>
+          <option value="imagemagick">ImageMagick</option>
         </select>
       </p>
       <p>
