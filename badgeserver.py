@@ -59,6 +59,10 @@ def svg2png_imagemagick(svg_data):
     return svg2png_command(svg_data, ['convert', 'badge.svg', 'badge.png'])
 
 
+def svg2png_imagemagick_msvg(svg_data):
+    return svg2png_command(svg_data, ['convert', 'msvg:badge.svg', 'badge.png'])
+
+
 def svg2png_rsvg(svg_data):
     return svg2png_command(svg_data, ['rsvg-convert', 'badge.svg', '-o', 'badge.png'])
 
@@ -139,6 +143,7 @@ def make_badge_png(**kw):
         'cairosvg': svg2png_cairosvg,
         'inkscape': svg2png_inkscape,
         'imagemagick': svg2png_imagemagick,
+        'imagemagick-msvg': svg2png_imagemagick_msvg,
         'rsvg': svg2png_rsvg,
     }[converter]
     return svg2png(svg)
@@ -246,7 +251,8 @@ INDEX_HTML = '''\
           <option value="cairosvg">CairoSVG</option>
           <option value="inkscape">Inkscape</option>
           <option value="rsvg">librsvg</option>
-          <option value="imagemagick">ImageMagick</option>
+          <option value="imagemagick">ImageMagick (rsvg)</option>
+          <option value="imagemagick-msvg">ImageMagick (msvg)</option>
         </select>
       </p>
       <p>
