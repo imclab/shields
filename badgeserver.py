@@ -219,7 +219,11 @@ INDEX_HTML = '''\
         var format = document.getElementById("format").value;
         var converter = document.getElementById("converter").value;
         var img = document.getElementById("result");
-        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color + "&vendor_width=" + vendor_width + "&status_width=" + status_width + "&converter=" + converter;
+        var url = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color;
+        if (vendor_width >= 0) url += "&vendor_width=" + vendor_width;
+        if (status_width >= 0) url += "&status_width=" + status_width;
+        if (format != "svg") url += "&converter=" + converter;
+        img.src = url;
         var tt = document.getElementById("url");
         tt.innerHTML = img.src;
       }
