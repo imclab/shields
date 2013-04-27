@@ -8,19 +8,44 @@ Be sure to install the Open Sans font where cairo will find it
 (i.e. cp font/Open_Sans/*.ttf ~/.local/share/fonts/).
 """
 
+import cgi
 import os
 import re
-import cgi
-from functools import partial
+import shutil
+import subprocess
+import tempfile
 from cStringIO import StringIO
+from contextlib import contextmanager
+from functools import partial
 
 import cairo
+from cairosvg import svg2png as svg2png_cairosvg
 from lxml import etree
-from cairosvg import svg2png
 
 
 HERE = os.path.dirname(__file__)
 SVG_TEMPLATE_FILE = os.path.join(HERE, "shield.svg")
+
+
+@contextmanager
+def TemporaryDirectory():
+    tmpdir = tempfile.mkdtemp(prefix='badgeserver-')
+    orig_dir = os.getcwd()
+    os.chdir(tmpdir)
+    try:
+        yield
+    finally:
+        os.chdir(orig_dir)
+        shutil.rmtree(tmpdir)
+
+
+def svg2png_inkscape(svg_data):
+    with TemporaryDirectory():
+        with open('badge.svg', 'wb') as f:
+            f.write(svg_data)
+        subprocess.check_call(['inkscape', '-f', 'badge.svg', '-e', 'badge.png'])
+        with open('badge.png', 'rb') as f:
+            return f.read()
 
 
 def load_svg_template():
@@ -93,7 +118,12 @@ def make_badge_svg(vendor="vendor", status="status", color="lightgray",
 
 
 def make_badge_png(**kw):
+    converter = kw.pop('converter', None) or 'cairosvg'
     svg = make_badge_svg(**kw)
+    svg2png = {
+        'cairosvg': svg2png_cairosvg,
+        'inkscape': svg2png_inkscape,
+    }[converter]
     return svg2png(svg)
 
 
@@ -115,12 +145,14 @@ def render_image(form, format):
     status = form.getfirst("status", "okay").decode('UTF-8')
     status_width = int(form.getfirst("status_width", "-1"))
     color = form.getfirst("color", "lightgray")
+    converter = form.getfirst("converter", "")
     factory, content_type = dict(
         png=(make_badge_png, "image/png"),
         svg=(make_badge_svg, "image/svg+xml"),
     )[format]
     image_data = factory(vendor=vendor, status=status, color=color,
-                         vendor_width=vendor_width, status_width=status_width)
+                         vendor_width=vendor_width, status_width=status_width,
+                         converter=converter)
     status = '200 OK'
     headers = [('Content-type', content_type)]
     return status, headers, image_data
@@ -159,8 +191,9 @@ INDEX_HTML = '''\
         var status_width = document.getElementById("status_width").value;
         var color = document.getElementById("color").value;
         var format = document.getElementById("format").value;
+        var converter = document.getElementById("converter").value;
         var img = document.getElementById("result");
-        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color + "&vendor_width=" + vendor_width + "&status_width=" + status_width;
+        img.src = "/image." + format + "?vendor=" + vendor + "&status=" + status + "&color=" + color + "&vendor_width=" + vendor_width + "&status_width=" + status_width + "&converter=" + converter;
       }
     </script>
   </head>
@@ -188,6 +221,13 @@ INDEX_HTML = '''\
         <select id="format" name="format" onchange="update()">
           <option value="png">PNG</option>
           <option value="svg">SVG</option>
+        </select>
+      </p>
+      <p>
+        <label for="status">SVG converter</label>
+        <select id="converter" name="converter" onchange="update()">
+          <option value="cairosvg">CairoSVG</option>
+          <option value="inkscape">Inkscape</option>
         </select>
       </p>
       <p>
